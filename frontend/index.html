@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SHAMart — a modern e-commerce storefront demonstrating graceful degradation against a FastAPI + MySQL backend in Kubernetes." />
+  <meta name="theme-color" content="#0284c7" />
+  <title>SHAMart · Cloud-Native Storefront</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230284c7'/%3E%3Cpath d='M9 12h14l-1.4 9.2a2 2 0 0 1-2 1.8h-7.2a2 2 0 0 1-2-1.8L9 12Zm3-1.5a4 4 0 0 1 8 0' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- ================= OPS TELEMETRY DASHBOARD ================= -->
+  <section id="ops-console" class="ops" aria-label="Ops Telemetry Dashboard">
+    <div class="ops__bar">
+      <button id="ops-toggle" class="ops__toggle" type="button" aria-expanded="true" aria-controls="ops-body">
+        <span class="ops__toggle-dot" aria-hidden="true"></span>
+        <span class="ops__toggle-label">Ops Telemetry Dashboard</span>
+        <span class="ops__chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+      </button>
+      <div class="ops__bar-meta">
+        <span id="ops-status-pill" class="pill pill--pending" role="status">
+          <span class="pill__dot" aria-hidden="true"></span>
+          <span id="ops-status-text">Connecting…</span>
+        </span>
+        <span class="ops__latency" title="Round-trip latency to /readyz">
+          <span class="ops__latency-label">latency</span>
+          <span id="ops-latency" class="mono">—</span>
+        </span>
+      </div>
+    </div>
+
+    <div id="ops-body" class="ops__body">
+      <div class="ops__grid">
+        <!-- System status -->
+        <article class="ops-card" aria-labelledby="ops-card-health">
+          <header class="ops-card__head">
+            <h3 id="ops-card-health">System Health</h3>
+            <span id="ops-health-badge" class="badge badge--muted">unknown</span>
+          </header>
+          <dl class="ops-kv">
+            <div><dt>Endpoint</dt><dd class="mono">GET /readyz</dd></div>
+            <div><dt>Status</dt><dd id="ops-health-status" class="mono">—</dd></div>
+            <div><dt>Database</dt><dd id="ops-health-db" class="mono">—</dd></div>
+            <div><dt>Latency</dt><dd id="ops-health-latency" class="mono">—</dd></div>
+            <div><dt>Last check</dt><dd id="ops-health-time" class="mono">—</dd></div>
+          </dl>
+          <button id="ops-poll-now" class="btn btn--ghost btn--sm" type="button">Poll now</button>
+        </article>
+
+        <!-- Build & version -->
+        <article class="ops-card" aria-labelledby="ops-card-version">
+          <header class="ops-card__head">
+            <h3 id="ops-card-version">Build &amp; Version</h3>
+            <span id="ops-version-env" class="badge badge--brand">—</span>
+          </header>
+          <dl class="ops-kv">
+            <div><dt>Git commit</dt><dd id="ops-version-sha" class="mono">—</dd></div>
+            <div><dt>Container tag</dt><dd id="ops-version-tag" class="mono">—</dd></div>
+            <div><dt>Environment</dt><dd id="ops-version-env-full" class="mono">—</dd></div>
+            <div><dt>API version</dt><dd id="ops-version-api" class="mono">—</dd></div>
+            <div><dt>Source</dt><dd id="ops-version-source" class="mono">—</dd></div>
+          </dl>
+          <p class="ops-card__hint mono">GET /api/v1/version</p>
+        </article>
+
+        <!-- Chaos simulator -->
+        <article class="ops-card ops-card--chaos" aria-labelledby="ops-card-chaos">
+          <header class="ops-card__head">
+            <h3 id="ops-card-chaos">Chaos Simulator</h3>
+            <span id="ops-chaos-badge" class="badge badge--muted">off</span>
+          </header>
+          <p class="ops-card__desc">Force a backend service degradation (HTTP 503) and verify the storefront's graceful error boundary.</p>
+          <button id="ops-chaos-toggle" class="switch" type="button" role="switch" aria-checked="false">
+            <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+            <span class="switch__text">Fault injection</span>
+          </button>
+          <p class="ops-card__hint">When enabled, all API routes return <span class="mono">503 Service Unavailable</span>.</p>
+        </article>
+
+        <!-- Metrics -->
+        <article class="ops-card" aria-labelledby="ops-card-metrics">
+          <header class="ops-card__head">
+            <h3 id="ops-card-metrics">Runtime Metrics</h3>
+            <a class="ops-card__link mono" id="ops-metrics-link" href="/metrics" target="_blank" rel="noopener">/metrics ↗</a>
+          </header>
+          <div class="metric-grid">
+            <div class="metric">
+              <span class="metric__value mono" id="ops-metric-requests">0</span>
+              <span class="metric__label">Requests served</span>
+            </div>
+            <div class="metric">
+              <span class="metric__value mono" id="ops-metric-pool">0 / 0</span>
+              <span class="metric__label">DB pool active</span>
+            </div>
+            <div class="metric">
+              <span class="metric__value mono" id="ops-metric-rps">0.0</span>
+              <span class="metric__label">Req / sec</span>
+            </div>
+            <div class="metric">
+              <span class="metric__value mono" id="ops-metric-uptime">0s</span>
+              <span class="metric__label">Uptime</span>
+            </div>
+          </div>
+          <div class="spark" aria-hidden="true"><canvas id="ops-spark" width="320" height="48"></canvas></div>
+        </article>
+      </div>
+      <p class="ops__note" id="ops-note">Telemetry auto-refreshes every <span class="mono">10s</span>. Mock values are shown while the backend is unreachable.</p>
+    </div>
+  </section>
+
+  <!-- ================= SITE HEADER ================= -->
+  <header class="site-header" id="site-header">
+    <div class="container header__inner">
+      <a class="brand" href="#main" aria-label="SHAMart home">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="30" height="30"><rect width="32" height="32" rx="9" fill="#0284c7"/><path d="M9 12h14l-1.4 9.2a2 2 0 0 1-2 1.8h-7.2a2 2 0 0 1-2-1.8L9 12Zm3-1.5a4 4 0 0 1 8 0" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="brand__text">SHA<span class="brand__accent">mart</span></span>
+      </a>
+
+      <nav class="cat-nav" id="cat-nav" aria-label="Product categories"></nav>
+
+      <div class="search" role="search">
+        <svg class="search__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="search-input" type="search" class="search__input" placeholder="Search products…" aria-label="Search products" autocomplete="off" />
+        <button id="search-clear" class="search__clear" type="button" aria-label="Clear search" hidden>&times;</button>
+      </div>
+
+      <button id="cart-trigger" class="cart-trigger" type="button" aria-haspopup="dialog" aria-controls="cart-drawer" aria-label="Open shopping cart">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.55L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>
+        <span id="cart-count" class="cart-trigger__badge" data-count="0" aria-hidden="true">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN ================= -->
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero__inner">
+        <div class="hero__content">
+          <span class="hero__eyebrow">Summer Cloud Sale · up to 40% off</span>
+          <h1 id="hero-title" class="hero__title">Gear that scales with you.</h1>
+          <p class="hero__lede">Premium electronics and everyday essentials, served fast. Built to keep selling even when the backend takes a nap.</p>
+          <div class="hero__actions">
+            <button class="btn btn--primary" type="button" data-scroll-to="catalog">Shop the collection</button>
+            <button class="btn btn--ghost-light" type="button" data-scroll-to="ops-console">View live telemetry</button>
+          </div>
+          <ul class="hero__stats">
+            <li><strong id="hero-stat-products">—</strong><span>products in stock</span></li>
+            <li><strong>99.95%</strong><span>checkout uptime</span></li>
+            <li><strong>2-day</strong><span>free shipping</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Catalog -->
+    <section id="catalog" class="catalog container" aria-labelledby="catalog-title">
+      <div class="catalog__head">
+        <div>
+          <h2 id="catalog-title" class="section-title">Featured products</h2>
+          <p id="catalog-sub" class="section-sub">Curated picks across every category.</p>
+        </div>
+        <div class="catalog__tools">
+          <label class="field field--inline">
+            <span class="field__label">Sort</span>
+            <select id="sort-select" class="select">
+              <option value="featured">Featured</option>
+              <option value="price-asc">Price: low to high</option>
+              <option value="price-desc">Price: high to low</option>
+              <option value="rating">Top rated</option>
+              <option value="name">Name A–Z</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div id="boundary" class="boundary" role="alert" hidden>
+        <div class="boundary__icon" aria-hidden="true">⚠</div>
+        <div class="boundary__body">
+          <h3 class="boundary__title" id="boundary-title">We hit a snag loading products</h3>
+          <p class="boundary__text" id="boundary-text">The catalog service is temporarily unavailable. You can retry, or keep browsing the cached catalog.</p>
+        </div>
+        <div class="boundary__actions">
+          <button id="boundary-retry" class="btn btn--primary btn--sm" type="button">Retry</button>
+          <button id="boundary-dismiss" class="btn btn--ghost btn--sm" type="button">Dismiss</button>
+        </div>
+      </div>
+
+      <div id="product-grid" class="grid" aria-live="polite" aria-busy="true"></div>
+
+      <div id="empty-state" class="empty-state" hidden>
+        <div class="empty-state__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </div>
+        <h3>No products match your filters</h3>
+        <p>Try a different search term or category.</p>
+        <button id="empty-reset" class="btn btn--primary btn--sm" type="button">Reset filters</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <span class="brand__text">SHA<span class="brand__accent">mart</span></span>
+        <p>Cloud-native commerce demo. FastAPI · MySQL · Kubernetes.</p>
+      </div>
+      <nav class="site-footer__links" aria-label="Footer">
+        <a href="#catalog">Catalog</a>
+        <a href="#ops-console">Telemetry</a>
+        <a href="/docs" target="_blank" rel="noopener">API Docs ↗</a>
+        <a href="#main">Back to top</a>
+      </nav>
+      <p class="site-footer__copy">© <span id="footer-year">2026</span> SHAMart. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ================= CART DRAWER ================= -->
+  <div id="overlay" class="overlay" hidden></div>
+
+  <aside id="cart-drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" aria-hidden="true">
+    <header class="drawer__head">
+      <h2 id="cart-title" class="drawer__title">Your cart <span id="cart-title-count" class="drawer__count">0</span></h2>
+      <button id="cart-close" class="icon-btn" type="button" aria-label="Close cart">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+
+    <div id="cart-items" class="drawer__items" aria-live="polite"></div>
+
+    <footer class="drawer__foot">
+      <dl class="totals">
+        <div class="totals__row"><dt>Subtotal</dt><dd id="cart-subtotal" class="mono">$0.00</dd></div>
+        <div class="totals__row"><dt>Shipping estimate</dt><dd id="cart-shipping" class="mono">$0.00</dd></div>
+        <div class="totals__row totals__row--grand"><dt>Total</dt><dd id="cart-total" class="mono">$0.00</dd></div>
+      </dl>
+      <button id="checkout-open" class="btn btn--primary btn--block" type="button" disabled>Complete order</button>
+      <button id="cart-clear" class="btn btn--ghost btn--block btn--sm" type="button">Clear cart</button>
+      <p class="drawer__note">Secure checkout · simulated payment</p>
+    </footer>
+  </aside>
+
+  <!-- ================= CHECKOUT MODAL ================= -->
+  <div id="checkout-modal" class="modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+      <header class="modal__head">
+        <div>
+          <h2 id="checkout-title" class="modal__title">Checkout</h2>
+          <p class="modal__sub">Order total <strong id="checkout-total" class="mono">$0.00</strong></p>
+        </div>
+        <button class="icon-btn" type="button" aria-label="Close checkout" data-close-modal>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <form id="checkout-form" class="modal__body" novalidate>
+        <div class="field">
+          <label class="field__label" for="co-name">Full name</label>
+          <input class="input" id="co-name" name="name" type="text" autocomplete="name" required minlength="2" placeholder="Ada Lovelace" />
+          <span class="field__error" data-error-for="name" hidden></span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="co-email">Email</label>
+          <input class="input" id="co-email" name="email" type="email" autocomplete="email" required placeholder="ada@example.com" />
+          <span class="field__error" data-error-for="email" hidden></span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="co-address">Shipping address</label>
+          <textarea class="input" id="co-address" name="address" rows="3" autocomplete="street-address" required minlength="6" placeholder="1 Analytical Engine Way, Apt 4 · London, UK"></textarea>
+          <span class="field__error" data-error-for="address" hidden></span>
+        </div>
+
+        <fieldset class="pay-methods">
+          <legend class="field__label">Payment method</legend>
+          <label class="pay-option">
+            <input type="radio" name="payment" value="card" checked />
+            <span class="pay-option__body">
+              <strong>Card</strong><span class="mono">•••• 4242</span>
+            </span>
+          </label>
+          <label class="pay-option">
+            <input type="radio" name="payment" value="wallet" />
+            <span class="pay-option__body">
+              <strong>SHAMart Wallet</strong><span class="mono">$1,200.00</span>
+            </span>
+          </label>
+        </fieldset>
+
+        <div id="checkout-error" class="boundary boundary--compact" role="alert" hidden>
+          <div class="boundary__icon" aria-hidden="true">⚠</div>
+          <div class="boundary__body">
+            <p class="boundary__text" id="checkout-error-text">Payment failed. Please try again.</p>
+          </div>
+        </div>
+
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+          <button type="submit" id="checkout-submit" class="btn btn--primary">
+            <span class="btn__spinner" aria-hidden="true" hidden></span>
+            <span class="btn__label">Pay &amp; place order</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= SUCCESS MODAL ================= -->
+  <div id="success-modal" class="modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="success-title">
+      <div class="success">
+        <div class="success__badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <h2 id="success-title" class="success__title">Order confirmed</h2>
+        <p class="success__text">Thanks <span id="success-name">friend</span>! Your order <strong id="success-id" class="mono">—</strong> is on its way.</p>
+        <dl class="success__meta">
+          <div><dt>Email</dt><dd id="success-email" class="mono">—</dd></div>
+          <div><dt>Total paid</dt><dd id="success-total" class="mono">—</dd></div>
+          <div><dt>ETA</dt><dd id="success-eta" class="mono">2 business days</dd></div>
+        </dl>
+        <button class="btn btn--primary btn--block" type="button" data-close-modal>Continue shopping</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOASTS ================= -->
+  <div id="toasts" class="toasts" role="region" aria-live="polite" aria-label="Notifications"></div>
+
+  <noscript>
+    <div class="noscript">SHAMart needs JavaScript enabled to run the storefront.</div>
+  </noscript>
+
+  <script src="/assets/js/data.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/store.js"></script>
+  <script src="/assets/js/toast.js"></script>
+  <script src="/assets/js/ui.js"></script>
+  <script src="/assets/js/ops.js"></script>
+  <script src="/assets/js/app.js"></script>
+</body>
+</html>

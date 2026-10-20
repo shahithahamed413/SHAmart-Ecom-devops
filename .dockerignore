@@ -1,0 +1,32 @@
+# Build context is the project root (docker build -f backend/Dockerfile .)
+# Context must contain backend/ and database/; everything else is excluded.
+
+# --- VCS ------------------------------------------------------------
+.git
+.gitignore
+
+# --- JS frontend (not part of the backend image) --------------------
+frontend
+node_modules
+
+# --- Python artifacts --------------------------------------------------------
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.egg-info/
+**/.venv/
+**/venv/
+
+# --- Secrets & local env -----------------------------------------------------
+**/.env
+**/.env.*
+!**/.env.example
+
+# --- IDE / OS noise ----------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# --- Logs ------------------------------------------------------------
+**/*.log

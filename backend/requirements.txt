@@ -1,0 +1,8 @@
+# ShaMart backend — strictly pinned runtime dependencies
+Flask==3.0.3
+Flask-Cors==4.0.1
+SQLAlchemy==2.0.30
+PyMySQL==1.1.0
+cryptography==42.0.7
+prometheus-client==0.20.0
+python-dotenv==1.0.1
