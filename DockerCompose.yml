@@ -10,7 +10,7 @@ services:
     build:
       context: ./database
       dockerfile: Dockerfile
-    image: shamart-db:v3
+    image: shahith/shamart-db:v3
     ports:
       - "${MYSQL_PORT:-3307}:3306"
     volumes:
@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: shamart-backend
+    image: shahith/shamart-backend
     depends_on:
       database:
         condition: service_healthy
@@ -33,7 +33,7 @@ services:
     build:
       context: ./frontend
       dockerfile: dockerfile
-    image: shamart-ui:v2
+    image: shahith/shamart-ui:v2
     depends_on:
       - backend
     ports:
