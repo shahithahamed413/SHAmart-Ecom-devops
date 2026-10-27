@@ -69,8 +69,7 @@ pipeline {
                         string(credentialsId: 'db-user', variable: 'DB_USER'),
                         string(credentialsId: 'db-pass', variable: 'DB_PASS')
                     ]) {
-                  // and passing credentials safely into the bash environment.
-                        sh '''
+                        sh """
                             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "mkdir -p /home/ubuntu/SHAmart-Ecom-devops/database /home/ubuntu/SHAmart-Ecom-devops/backend"
                             
                             scp -o StrictHostKeyChecking=no DockerCompose.yml ${EC2_USER}@${EC2_IP}:/home/ubuntu/SHAmart-Ecom-devops/
@@ -79,18 +78,18 @@ pipeline {
                               cd /home/ubuntu/SHAmart-Ecom-devops
                               
                               # 1. Create database .env file
-                              echo "MYSQL_ROOT_PASSWORD='''${DB_ROOT_PASS}'''" > database/.env
-                              echo "MYSQL_DATABASE='''${DB_NAME}'''" >> database/.env
-                              echo "MYSQL_USER='''${DB_USER}'''" >> database/.env
-                              echo "MYSQL_PASSWORD='''${DB_PASS}'''" >> database/.env
+                              echo "MYSQL_ROOT_PASSWORD=${DB_ROOT_PASS}" > database/.env
+                              echo "MYSQL_DATABASE=${DB_NAME}" >> database/.env
+                              echo "MYSQL_USER=${DB_USER}" >> database/.env
+                              echo "MYSQL_PASSWORD=${DB_PASS}" >> database/.env
                               
                               # 2. Create backend .env.compose file
                               cat << 'EOL' > backend/.env.compose
                               DB_HOST=database
                               DB_PORT=3306
-                              DB_USER='''${DB_USER}'''
-                              DB_PASSWORD='''${DB_PASS}'''
-                              DB_NAME='''${DB_NAME}'''
+                              DB_USER=${DB_USER}
+                              DB_PASSWORD=${DB_PASS}
+                              DB_NAME=${DB_NAME}
                               HOST=0.0.0.0
                               PORT=8000
                               FLASK_DEBUG=false
@@ -105,7 +104,8 @@ pipeline {
                               
                               echo 'Deployment completed successfully!'
                             EOF
-                        '''.stripIndent()
+                        """
+                       
                     }
                 }
             }
