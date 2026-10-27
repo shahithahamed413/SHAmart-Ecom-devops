@@ -8,7 +8,7 @@ pipeline {
         BACKEND_IMAGE = 'shahith/shamart-backend'
         FRONTEND_IMAGE = 'shahith/shamart-ui:v2'
         
-        EC2_IP = '3.111.219.170'
+        EC2_IP = '13.233.232.83'
         EC2_USER = 'ubuntu' 
     }
 
@@ -69,18 +69,18 @@ pipeline {
                         string(credentialsId: 'db-user', variable: 'DB_USER'),
                         string(credentialsId: 'db-pass', variable: 'DB_PASS')
                     ]) {
-                        sh """
+                        sh '''
                             # 1. Create project folder & subfolder on EC2 if not exists
                             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "mkdir -p /home/ubuntu/SHAmart-Ecom-devops/database"
                             
                             # 2. Automatically copy DockerCompose.yml from Jenkins workspace to EC2
                             scp -o StrictHostKeyChecking=no DockerCompose.yml ${EC2_USER}@${EC2_IP}:/home/ubuntu/SHAmart-Ecom-devops/
                             
-                            # 3. SSH into EC2, create .env file, pull images, and run Docker Compose
+                            # 3. SSH into EC2, create .env file securely, pull and run
                             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} << 'EOF'
                               cd /home/ubuntu/SHAmart-Ecom-devops
                               
-                              # Dynamically create database .env file from Jenkins credentials securely
+                              # Dynamically create database .env file securely using environment variables
                               echo "MYSQL_ROOT_PASSWORD=${DB_ROOT_PASS}" > database/.env
                               echo "MYSQL_DATABASE=${DB_NAME}" >> database/.env
                               echo "MYSQL_USER=${DB_USER}" >> database/.env
@@ -94,7 +94,7 @@ pipeline {
                               
                               echo 'Deployment completed successfully!'
                             EOF
-                        """
+                        '''
                     }
                 }
             }
