@@ -69,32 +69,43 @@ pipeline {
                         string(credentialsId: 'db-user', variable: 'DB_USER'),
                         string(credentialsId: 'db-pass', variable: 'DB_PASS')
                     ]) {
+                  // and passing credentials safely into the bash environment.
                         sh '''
-                            # 1. Create project folder & subfolder on EC2 if not exists
-                            ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "mkdir -p /home/ubuntu/SHAmart-Ecom-devops/database"
+                            ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "mkdir -p /home/ubuntu/SHAmart-Ecom-devops/database /home/ubuntu/SHAmart-Ecom-devops/backend"
                             
-                            # 2. Automatically copy DockerCompose.yml from Jenkins workspace to EC2
                             scp -o StrictHostKeyChecking=no DockerCompose.yml ${EC2_USER}@${EC2_IP}:/home/ubuntu/SHAmart-Ecom-devops/
                             
-                            # 3. SSH into EC2, create .env file securely, pull and run
                             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} << 'EOF'
                               cd /home/ubuntu/SHAmart-Ecom-devops
                               
-                              # Dynamically create database .env file securely using environment variables
-                              echo "MYSQL_ROOT_PASSWORD=${DB_ROOT_PASS}" > database/.env
-                              echo "MYSQL_DATABASE=${DB_NAME}" >> database/.env
-                              echo "MYSQL_USER=${DB_USER}" >> database/.env
-                              echo "MYSQL_PASSWORD=${DB_PASS}" >> database/.env
+                              # 1. Create database .env file
+                              echo "MYSQL_ROOT_PASSWORD='''${DB_ROOT_PASS}'''" > database/.env
+                              echo "MYSQL_DATABASE='''${DB_NAME}'''" >> database/.env
+                              echo "MYSQL_USER='''${DB_USER}'''" >> database/.env
+                              echo "MYSQL_PASSWORD='''${DB_PASS}'''" >> database/.env
+                              
+                              # 2. Create backend .env.compose file
+                              cat << 'EOL' > backend/.env.compose
+                              DB_HOST=database
+                              DB_PORT=3306
+                              DB_USER='''${DB_USER}'''
+                              DB_PASSWORD='''${DB_PASS}'''
+                              DB_NAME='''${DB_NAME}'''
+                              HOST=0.0.0.0
+                              PORT=8000
+                              FLASK_DEBUG=false
+                              APP_ENV=production
+                              EOL
                               
                               echo 'Environment files and DockerCompose.yml synced successfully!'
                               
-                              # Pull and run using Docker Compose
+                              # 3. Pull and run using Docker Compose
                               sudo docker compose -f DockerCompose.yml pull
                               sudo docker compose -f DockerCompose.yml up -d --remove-orphans
                               
                               echo 'Deployment completed successfully!'
                             EOF
-                        '''
+                        '''.stripIndent()
                     }
                 }
             }
