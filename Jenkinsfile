@@ -8,7 +8,7 @@ pipeline {
         BACKEND_IMAGE = 'shahith/shamart-backend'
         FRONTEND_IMAGE = 'shahith/shamart-ui:v2'
         
-        EC2_IP = ''
+        EC2_IP = '3.110.33.130'
         EC2_USER = 'ubuntu' 
     }
 
