@@ -8,7 +8,7 @@ pipeline {
         BACKEND_IMAGE = 'shahith/shamart-backend'
         FRONTEND_IMAGE = 'shahith/shamart-ui:v2'
         
-        EC2_IP = '13.233.232.83'
+        EC2_IP = ''
         EC2_USER = 'ubuntu' 
     }
 
@@ -72,7 +72,7 @@ pipeline {
                         sh """
                             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "mkdir -p /home/ubuntu/SHAmart-Ecom-devops/database /home/ubuntu/SHAmart-Ecom-devops/backend"
                             
-                            scp -o StrictHostKeyChecking=no DockerCompose.yml ${EC2_USER}@${EC2_IP}:/home/ubuntu/SHAmart-Ecom-devops/
+                           scp -o StrictHostKeyChecking=no DockerCompose.prod.yml ${EC2_USER}@${EC2_IP}:/home/ubuntu/SHAmart-Ecom-devops/DockerCompose.yml
                             
                             ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} << 'EOF'
                               cd /home/ubuntu/SHAmart-Ecom-devops
