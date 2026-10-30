@@ -15,7 +15,7 @@ services:
     logging:
       driver: "awslogs"
       options:
-        awslogs-region: "ap-south-1a"
+        awslogs-region: "ap-south-1"
         awslogs-group: "/aws/ec2/shamart-app"
         awslogs-stream: "database-service"
 
@@ -30,7 +30,7 @@ services:
     logging:
       driver: "awslogs"
       options:
-        awslogs-region: "ap-south-1a"
+        awslogs-region: "ap-south-1"
         awslogs-group: "/aws/ec2/shamart-app"
         awslogs-stream: "backend-service"
 
@@ -43,7 +43,7 @@ services:
     logging:
       driver: "awslogs"
       options:
-        awslogs-region: "ap-south-1a"
+        awslogs-region: "ap-south-1"
         awslogs-group: "/aws/ec2/shamart-app"
         awslogs-stream: "frontend-service"
 
