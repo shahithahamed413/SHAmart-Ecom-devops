@@ -99,6 +99,7 @@ pipeline {
                             EOF
                         """
                         sh"""
+                            cd /home/ubuntu/SHAmart-Ecom-devops
                             echo 'Environment files and DockerCompose.yml synced successfully!'
                             sudo docker compose -f DockerCompose.yml pull
                             sudo docker compose -f DockerCompose.yml up -d --remove-orphan
