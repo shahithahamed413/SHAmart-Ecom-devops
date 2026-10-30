@@ -97,14 +97,10 @@ pipeline {
                               EOL
                             
                             EOF
+                            # 4. Docker Compose commands OUTSIDE EOF
+                          ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "cd /home/ubuntu/SHAmart-Ecom-devops && sudo docker compose -f DockerCompose.yml pull && sudo docker compose -f DockerCompose.yml up -d --remove-orphans"
                         """
-                        sh"""
-                            cd /home/ubuntu/SHAmart-Ecom-devops
-                            echo 'Environment files and DockerCompose.yml synced successfully!'
-                            sudo docker compose -f DockerCompose.yml pull
-                            sudo docker compose -f DockerCompose.yml up -d --remove-orphan
-                        """
-                    }
+                       
                 }
             }
         }
