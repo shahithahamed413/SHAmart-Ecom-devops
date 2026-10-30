@@ -95,17 +95,14 @@ pipeline {
                               FLASK_DEBUG=false
                               APP_ENV=production
                               EOL
-                              
-                              echo 'Environment files and DockerCompose.yml synced successfully!'
-                              
-                              # 3. Pull and run using Docker Compose
-                              sudo docker compose -f DockerCompose.yml pull
-                              sudo docker compose -f DockerCompose.yml up -d --remove-orphans
-                              
-                              echo 'Deployment completed successfully!'
+                            
                             EOF
                         """
-                       
+                        sh"""
+                            echo 'Environment files and DockerCompose.yml synced successfully!'
+                            sudo docker compose -f DockerCompose.yml pull
+                            sudo docker compose -f DockerCompose.yml up -d --remove-orphan
+                        """
                     }
                 }
             }

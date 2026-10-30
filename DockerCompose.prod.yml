@@ -12,6 +12,12 @@ services:
       - "${MYSQL_PORT:-3307}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "ap-south-1a"
+        awslogs-group: "/aws/ec2/shamart-app"
+        awslogs-stream: "database-service"
 
   backend:
     env_file:
@@ -21,6 +27,12 @@ services:
       - database
     ports:
       - "${API_PORT:-8000}:8000"
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "ap-south-1a"
+        awslogs-group: "/aws/ec2/shamart-app"
+        awslogs-stream: "backend-service"
 
   frontend:
     image: shahith/shamart-ui:v2
@@ -28,6 +40,12 @@ services:
       - backend
     ports:
       - "${FRONTEND_PORT:-8080}:80"
+    logging:
+      driver: "awslogs"
+      options:
+        awslogs-region: "ap-south-1a"
+        awslogs-group: "/aws/ec2/shamart-app"
+        awslogs-stream: "frontend-service"
 
 volumes:
   mysql_data:
